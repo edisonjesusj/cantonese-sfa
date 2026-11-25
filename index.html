@@ -128,6 +128,13 @@ ol.flow{margin:0;padding:0}
 .addword input::placeholder{color:var(--ink-2);opacity:.55}
 .addword input:focus{outline:3px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .addword .btn{min-height:52px}
+.word-library{padding:14px;margin-bottom:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
+.library-filters{display:flex;flex-wrap:wrap;gap:12px}
+.library-filters label{display:grid;gap:4px;flex:1 1 180px}
+.library-filters input,.library-filters select{box-sizing:border-box;width:100%;min-height:44px;padding:6px 10px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.library-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:8px;max-height:23rem;overflow:auto;padding:5px;margin-top:6px}
+.library-results .btn{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;text-align:left}
+.library-results small{color:var(--ink-2)}
 .addmsg{flex-basis:100%;margin:0;font-size:.9rem;color:var(--ink-2)}
 .addmsg.ok{color:var(--good);font-weight:700}
 .addmsg.err{color:var(--bad);font-weight:700}
@@ -405,7 +412,7 @@ brush:'<svg viewBox="0 0 200 200" role="img" aria-label="示例圖片"><g transf
 umb:'<svg viewBox="0 0 200 200" role="img" aria-label="示例圖片"><path d="M100 100v58a14 14 0 0 1-28 0" stroke="#5A4634" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M100 16v12" stroke="#5A4634" stroke-width="7" stroke-linecap="round"/><path d="M20 104a80 80 0 0 1 160 0q-20-18-40 0q-20-18-40 0q-20-18-40 0q-20-18-40 0z" fill="#7A4FC9"/><path d="M60 104q10-50 40-78M140 104q-10-50-40-78" stroke="#5E38A6" stroke-width="3" fill="none"/></svg>',
 moon:'<svg viewBox="0 0 200 200" role="img" aria-label="示例圖片"><rect width="200" height="200" rx="22" fill="#1B2A4E"/><circle cx="104" cy="100" r="56" fill="#F6D860"/><circle cx="84" cy="82" r="11" fill="#E3BF3F"/><circle cx="124" cy="112" r="15" fill="#E3BF3F"/><circle cx="96" cy="130" r="7" fill="#E3BF3F"/><circle cx="128" cy="74" r="6" fill="#E3BF3F"/><g fill="#FFFFFF"><circle cx="30" cy="36" r="3"/><circle cx="172" cy="44" r="2.5"/><circle cx="40" cy="160" r="2.5"/><circle cx="170" cy="164" r="3"/><circle cx="24" cy="98" r="2"/></g></svg>'
 };
-const ITEMS=[
+const STARTER_ITEMS=[
  {id:'apple',word:'蘋果',jyut:'ping4 gwo2',alt:'蘋果仔',onset:'p',mouth:'雙唇合埋，再用力噴氣',syl:'蘋',sylJ:'ping4',pic:PIC.apple,
   feats:{cat:{a:'生果',d:['傢俬','交通工具','雨具']},use:{a:'用嚟食',d:['用嚟著','用嚟寫字','用嚟載人']},act:{a:'咬嚟食',d:['揸住嚟飲','上車搭','撐開擔住']},prop:{a:'紅色、圓圓哋',d:['有轆、好大','有毛、長長哋','透明、有耳']},loc:{a:'生果檔',d:['書局','藥房','巴士站']},assoc:{a:'蘋果汁',d:['牙膏','落雨','車飛']}},
   ext:[{parts:['蘋果'],j:'ping4 gwo2'},{parts:['食','蘋果'],j:'sik6 ping4 gwo2'},{parts:['我','食','蘋果'],j:'ngo5 sik6 ping4 gwo2'}]},
@@ -425,6 +432,7 @@ const ITEMS=[
   feats:{cat:{a:'天上嘅嘢',d:['飲食用具','交通工具','生果']},use:{na:true},act:{a:'夜晚喺天上發光',d:['喺馬路上行','喺水入面游','喺樹上面生']},prop:{a:'圓圓哋、好光',d:['有轆、好大','有毛、長長哋','有耳、圓筒形']},loc:{a:'天上',d:['廚房','沖涼房','巴士站']},assoc:{a:'中秋節',d:['牙膏','司機','茶']}},
   ext:[{parts:['月亮'],j:'jyut6 loeng6'},{parts:['睇','月亮'],j:'tai2 jyut6 loeng6'},{parts:['我','睇','月亮'],j:'ngo5 tai2 jyut6 loeng6'}]}
 ];
+const ITEMS=STARTER_ITEMS.slice();
 const LEVELS=['單詞','雙詞','句子'];
 
 /* ---------- 治療師自訂詞語：只儲存喺呢部裝置（localStorage） ---------- */
@@ -564,6 +572,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 const newId=()=>'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 /* Local semantic entries: category | word | Jyutping | alternatives | use | action | property | location | association | verb */
+/* 詞語選材參考 Cifu 成人粵語口語詞頻，以及香港「我的溝通錦囊」同失語症居家溝通板。
+   以下特徵、干擾選項同延伸練習為本網站編寫。 */
 const WORD_EXAMPLES = `
 生果|西瓜|sai1 gwaa1|西瓜仔|用嚟食|切開嚟食|大個、綠皮，果肉通常係紅色|生果檔|夏天|食
 生果|香蕉|hoeng1 ziu1|蕉|用嚟食|剝皮嚟食|彎彎哋，熟咗多數係黃色|生果檔|香蕉皮|食
@@ -655,20 +665,137 @@ const WORD_EXAMPLES = `
 大自然|星星|sing1 sing1|星、星仔|—|喺夜空睇落好似閃緊|望落係細細點光|夜晚嘅天空|星座|睇
 大自然|雲|wan4|雲朵|—|跟住風飄|一團團，可以係白色或者灰色|天空|落雨|睇
 大自然|彩虹|coi2 hung4|虹|—|有陽光照到水滴嗰陣會出現|彎彎哋，有幾種顏色|落雨前後嘅天空|雨後陽光|睇
+食物|飯|faan6|白飯|用嚟食|用匙羹舀或者用筷子扒嚟食|一粒粒，煮熟咗會軟熟|飯煲入面或者餐枱|餸菜|食
+食物|粥|zuk1|白粥|用嚟食|用匙羹舀嚟食|米煮到軟爛，呈糊狀|茶餐廳或者屋企|油炸鬼|食
+食物|麵|min6|麵條|用嚟食|用筷子夾起或者拌勻|一條條，有粗有幼|麵店或者餐枱|麵湯|食
+食物|米|mai5|白米|煮熟之後變成飯|先洗米，再放入飯煲|乾身，一粒粒|廚房嘅米缸|飯煲|洗
+食物|湯|tong1|湯水|用嚟飲|用碗盛起或者用匙羹舀|多數係液體，煲湯時會用水|飯枱或者餐廳|湯碗|飲
+食物|魚肉|jyu4 juk6||用嚟食|可以蒸、煎或者煮熟嚟食|熟咗通常容易分成一片片，有時有骨|街市魚檔或者飯枱|魚骨|食
+食物|豬肉|zyu1 juk6||用嚟煮餸|可以切片、切粒或者剁碎|生肉多數偏粉紅色，有啲部分有肥膏|街市肉檔|蒸肉餅|煮
+食物|雞肉|gai1 juk6||用嚟煮餸|可以斬件或者起骨，再煮熟|有瘦肉，部分連皮或者骨|街市雞檔或者超級市場|豉油雞|食
+食物|豆腐|dau6 fu6||用嚟煮餸|可以切件嚟蒸或者煎|多數色淺，口感可以嫩滑或者實淨|街市豆腐檔|黃豆|食
+食物|雞髀|gai1 bei2|雞腿|用嚟食|可以成隻煮熟，揸住骨嚟食|一端肉厚，中間有骨|熟食店或者飯枱|雞髀飯|食
+食物|燒賣|siu1 maai2||用嚟食|蒸熟之後可以用筷子夾嚟食|皮包住餡，中間頂部開口|茶樓或者小食店|點心|食
+食物|叉燒|caa1 siu1||用嚟食|燒好之後切片|表面常見紅啡色同焦香邊|燒味店|叉燒飯|食
+食物|鹽|jim4|食鹽|用嚟調味|煮餸時加落去拌勻|白色細粒，味道鹹|廚房調味架|鹹味|加
+食物|糖|tong4|砂糖|用嚟調甜味|加落熱飲度可以攪溶|砂糖通常係細粒結晶，味道甜|廚房調味架|甜味|加
+飲品|水|seoi2|飲用水|用嚟飲|倒落杯度飲|清澈，通常冇色冇味|水壺或者飲水機|口渴|飲
+飲品|茶|caa4|茶水|用嚟飲|用熱水沖茶葉，再倒入杯|有茶香，顏色視乎茶葉而定|茶樓或者屋企|茶葉|飲
+身體部位|頭|tau4|頭部|保護腦，亦有眼耳口鼻|可以點頭或者擰頭|頂上多數有頭髮|頸上面|枕頭|摸
+身體部位|眼|ngaan5|眼睛|用嚟睇嘢|可以眨眼同望向唔同方向|有眼皮同眼珠|面上面|眼鏡|擘大
+身體部位|耳仔|ji5 zai2|耳、耳朵|用嚟聽聲|可以接收周圍嘅聲音|外面有耳殼同耳窿|頭嘅兩邊|聲音|摸
+身體部位|鼻|bei6|鼻哥、鼻子|用嚟呼吸同聞氣味|可以吸氣或者嗅嘢|有兩個鼻窿|面中央，口上面|氣味|摸
+身體部位|口|hau2|嘴、嘴巴|用嚟講嘢同食嘢|可以開合，配合舌頭發聲|有上唇同下唇|面嘅下半部|講嘢|擘大
+身體部位|牙|ngaa4|牙齒|用嚟咬同磨碎食物|食嘢嗰陣上下合埋咬|硬身，通常偏白色|口入面|牙刷|刷
+身體部位|舌頭|sit3 tau4|脷、舌|幫手講嘢同感受味道|可以伸出嚟或者捲起|軟身，通常偏粉紅色|口入面|味道|伸
+身體部位|頸|geng2|頸部、脖子|連住頭同身體|可以郁動，令個頭轉向|兩側同肩膊相連|頭同肩膊之間|頸巾|摸
+身體部位|手|sau2|隻手|用嚟攞住嘢|可以揸拳或者張開|有手掌同手指|手腕下面|手套|洗
+身體部位|手指|sau2 zi2|手指頭|用嚟指嘢同捏住細件嘢|可以屈曲同伸直|尾端有指甲|手掌前面|指甲|屈
+身體部位|腳|goek3|隻腳|幫手企立同行路|可以提起離地再落地|末端有腳板同腳趾|身體下方|鞋|洗
+身體部位|膝頭|sat1 tau4|膝、膝蓋|畀條腿屈曲同伸直|坐低時會屈起|屈起嗰陣前面會凸出|大髀同小腿之間|護膝|摸
+身體部位|背脊|bui3 zek3|背、背部|承托上半身|彎身時會跟住郁|中間有脊骨|身體後面|椅背|摸
+身體部位|心口|sam1 hau2|胸口、胸部|胸腔保護心臟同肺|呼吸時會起伏|左右有肋骨包住胸腔|頸下面，肚上面|呼吸|摸
+身體部位|肚|tou5|肚皮、腹部|入面有胃同腸等器官|呼吸時可以見到輕微起伏|表面中央附近有肚臍|心口下面|肚臍|摸
+身體部位|喉嚨|hau4 lung4|喉|幫手吞嘢同發聲|吞口水嗰陣會郁|從外面只可以見到頸前面|口後面同頸入面|吞口水|摸
+人物|媽媽|maa4 maa1|媽咪、阿媽|—|會同家人相處同照顧小朋友|通常憑樣貌或者聲音認得|屋企或者家庭聚會|母親節|搵
+人物|爸爸|baa4 baa1|爹哋、阿爸|—|會同家人相處同照顧小朋友|通常憑樣貌或者聲音認得|屋企或者家庭聚會|父親節|搵
+人物|老公|lou5 gung1|丈夫|—|可以同伴侶一齊處理日常生活|可以喺合照入面認出佢|屋企或者家庭聚會|結婚|搵
+人物|老婆|lou5 po4|太太、妻子|—|可以同伴侶一齊處理日常生活|可以喺合照入面認出佢|屋企或者家庭聚會|結婚|搵
+人物|仔|zai2|兒子|—|可以同父母傾偈同相處|可以係小朋友或者大人|屋企或者家庭聚會|父母|搵
+人物|女|neoi5|女兒、阿女|—|可以同父母傾偈同相處|可以係小朋友或者大人|屋企或者家庭聚會|父母|搵
+人物|朋友|pang4 jau5|友人|—|可以一齊傾偈或者約出街|通常會憑樣貌或者聲音認得|朋友聚會|聯絡|見
+人物|照顧者|ziu3 gu3 ze2|照料者|—|按需要協助生活同溝通|可以係家人、朋友或者受聘人士|屋企或者復康中心|陪診|搵
+人物|醫生|ji1 sang1|大夫|—|問病情、做檢查同講解治療|有時會著白袍或者用聽筒|診所或者醫院|覆診|睇
+人物|護士|wu6 si6|護理人員|—|照顧病人，量度生命表徵|返工一般會著制服或者戴名牌|病房或者診所|護理|搵
+人物|言語治療師|jin4 jyu5 zi6 liu4 si1|語言治療師|—|評估同訓練言語、語言或者吞嚥|工作時可能用圖卡同評估表|醫院、復康中心或者診所|溝通訓練|見
+人物|司機|si1 gei1||—|揸車同留意道路情況|工作時會坐喺軚盤後面|車入面|軚盤|搵
+地方|屋企|uk1 kei2|家|生活同休息|返去食飯、瞓覺同見家人|通常有門口同生活空間|住宅區|家人|返
+地方|街市|gaai1 si5|菜市場|買餸同日用品|行檔口，揀新鮮食材|有唔同種類嘅檔口|社區或者住宅區入面|買餸|去
+地方|超級市場|ciu1 kap1 si5 coeng4|超市|買食品同家居用品|喺貨架拎嘢，再去收銀處付款|有幾行貨架同收銀處|商場或者街舖|購物車|去
+地方|藥房|joek6 fong4|藥店|買藥物同部分護理用品|問店員或者藥劑師，再到櫃位付款|有貨架同藥物包裝|街邊或者商場|藥盒|去
+地方|醫院|ji1 jyun2||提供診治同住院護理|可以登記睇症或者探病|通常有接待處同病房|市區或者社區入面|病房|去
+地方|診所|can2 so2||畀人做門診同檢查|登記、等叫名，再入房睇症|通常有候診區同診症房|住宅區或者商業大廈|醫生|去
+地方|廁所|ci3 so2|洗手間|畀人如廁同洗手|如廁後沖水同洗手|通常有馬桶同洗手盆|屋企、商場或者醫院入面|廁紙|去
+地方|廚房|cyu4 fong2||用嚟預備食物同煮飯|洗餸、切嘢同煮餸|通常有爐頭、工作枱同洗手盆|屋企或者餐廳入面|廚具|入
+地方|睡房|seoi6 fong2|睡覺房、寢室|畀人瞓覺同休息|入去換衫或者瞓覺|通常有床同燈|屋企入面|床|返
+地方|公園|gung1 jyun2||畀人散步、做運動同休息|可以喺行人路散步或者坐低|通常有植物同行人路|社區或者海旁|長櫈|去
+地方|車站|ce1 zaam6||畀人等車同上落車|睇站牌同排隊等車|通常有站牌或者月台|交通路線沿途|班次|去
+地方|巴士站|baa1 si2 zaam6|巴士站頭|畀人等巴士同上落車|喺站牌附近排隊等巴士|有路線牌，有啲站有上蓋|馬路旁邊|巴士路線|去
+地方|銀行|ngan4 hong4||畀人處理存款、提款等理財事項|拎籌或者去櫃位辦理|通常有服務櫃位，有啲分行有櫃員機|商業區或者街邊|銀行卡|去
+地方|郵局|jau4 guk2||用嚟寄信同寄包裹|貼郵票或者拎包裹去櫃位|有辦理郵務嘅櫃位|社區或者商場|郵票|去
+地方|餐廳|caan1 teng1|食肆、飯館|畀人點餐同食飯|睇餐牌、落單同埋單|通常有餐枱同座位|街邊或者商場|餐牌|去
+地方|復康中心|fuk6 hong1 zung1 sam1|康復中心|畀有需要人士做復康訓練|按安排去接受評估或者做練習|通常有訓練室或者器材|醫院、院舍或者社區入面|復康練習|去
+醫療及復康用品|輪椅|leon4 ji2|輪椅車|協助行動不便嘅人移動|可以用手推輪或者由人喺後面推|有座位、車輪同腳踏|醫院或者復康中心|斜路|坐
+醫療及復康用品|拐杖|gwaai2 zoeng2|枴杖、手杖|行路時提供支撐|握住頂部，將杖腳放落地支撐|長長一支，底部通常有防滑膠|屋企或者復康中心|步行|用
+醫療及復康用品|助行架|zo6 haang4 gaa3|步行架、助行器|幫助保持行路時嘅平衡|雙手握住扶手，再按需要移動個架|有左右扶手同腳架，有啲有車輪|屋企、病房或者復康中心|步行訓練|用
+醫療及復康用品|藥|joek6|藥物|按醫囑用嚟治療或者減輕病徵|按包裝標籤或者醫護指示使用|可以係丸狀、液體或者膏狀|藥房或者藥盒|藥袋|攞
+醫療及復康用品|藥盒|joek6 hap6|藥物盒|用嚟分類或者裝藥|打開小格，將藥分開放|通常有一格格同可以開合嘅蓋|家中藥物收納位置|藥丸|打開
+醫療及復康用品|藥水|joek6 seoi2|液體藥物|按標籤使用嘅液體藥物|打開樽蓋，按醫護指示使用|係液體，多數裝喺樽入面|藥房或者家中藥物收納位置|藥樽|攞
+醫療及復康用品|藥丸|joek6 jyun2|藥粒|按醫囑用作治療|由藥樽倒出或者由藥板推出|通常細粒，有唔同顏色同形狀|藥房或者藥盒|藥板|攞
+醫療及復康用品|血壓計|hyut3 aat3 gai3|血壓機|用嚟量度血壓|按器材指示套上袖帶再啟動|通常有袖帶同顯示讀數嘅錶或者屏幕|診所或者家中|血壓|用
+醫療及復康用品|體溫計|tai2 wan1 gai3|探熱針、電子探熱針|用嚟量度體溫|按器材指示測量，再睇讀數|通常有感應位置同刻度或者屏幕|藥箱或者診所|探熱|用
+醫療及復康用品|眼藥水|ngaan5 joek6 seoi2|滴眼液|按醫護指示用喺眼睛|用滴嘴滴出液體|通常裝喺有細滴嘴嘅樽入面|藥箱或者藥房|眼睛|攞
+醫療及復康用品|口罩|hau2 zaau3||用嚟遮住口同鼻|將兩邊帶掛好，覆蓋口鼻|有罩面同掛帶|藥房、醫院或者手袋|咳嗽|戴
+醫療及復康用品|膠布|gaau1 bou3|膠布貼、傷口膠布|用嚟遮護細小傷口或者固定敷料|撕開底紙，再貼好|一邊可以黐住皮膚|急救箱|敷料|貼
+醫療及復康用品|繃帶|bang1 daai2|紗布帶|用嚟固定敷料或者支撐|按需要纏住，再固定尾端|長條狀，通常捲起收納|急救箱或者診所|敷料|攞
+醫療及復康用品|覆診紙|fuk1 can2 zi2|覆診單、覆診通知書|記低下次睇症嘅日期同地點|覆診前攞出嚟睇時間地點|紙上通常印有日期同時間|病人嘅文件袋或者診所|覆診|睇
+醫療及復康用品|助聽器|zo6 ting3 hei3|助聽機|幫助聽清楚聲音|戴喺耳入面或者耳背|細細部，有拾音同放聲嘅部件|耳仔或者收納盒|聽力|戴
+醫療及復康用品|病床|beng6 cong4|醫院床|畀住院或者需要護理嘅人休息|病人瞓低，照顧者可以按需要調整位置|通常有床褥，有啲可以升降或者加床欄|病房|床欄|瞓
+醫療及復康用品|床欄|cong4 laan4|床邊欄杆|用作床邊嘅護欄|按設計可以升起或者放低|一排欄杆，固定喺床邊|病床或者護理床兩側|病床|睇
+衣物|褲|fu3|褲仔|用嚟著喺下身|兩隻腳伸入兩條褲管|有褲頭同兩條褲管|衣櫃|褲頭|著
+衣物|外套|ngoi6 tou3|褸|著喺外面保暖或者擋風|將手伸入袖，再扣鈕或者拉拉鏈|多數有前襟同袖|衣櫃或者掛衣架|天氣凍|著
+衣物|拖鞋|to1 haai2||畀人方便咁著落腳|將腳直接套入去|好多款冇後跟包住腳|屋企門口或者睡房|屋企|著
+衣物|內褲|noi6 fu3|底褲|著喺外褲入面|將腳伸入，再拉到腰位|通常用軟布造，有橡筋褲頭|衣櫃或者櫃桶|換衫|著
+家居用品|門|mun4|門扇|用嚟開關出入口|推、拉或者趟開|通常有門框同手柄|屋企或者房間嘅出入口|鎖匙|開
+家居用品|窗|coeng1|窗口、窗戶|畀光入嚟同通風|可以推開、拉開或者閂埋|通常有窗框同玻璃|牆上|窗簾|開
+家居用品|廁紙|ci3 zi2|衛生紙|如廁後用嚟清潔|由紙卷拉出一段，再撕低|薄薄哋，通常捲成卷|廁所|廁紙架|攞
+家居用品|垃圾桶|laap6 saap3 tung2|垃圾箱|用嚟裝垃圾|揭蓋或者直接將垃圾掉入去|有開口，可能有蓋|廚房、公園或者街邊|垃圾袋|清理
+家居用品|毛氈|mou4 zin1|氈|可以冚住身體保暖|攤開冚喺身上|布質偏厚，通常軟熟|床上或者梳化上|天氣凍|冚
+家居用品|鏡|geng3|鏡子|用嚟照出自己或者物件嘅樣|企喺前面就睇到倒影|表面平滑，會反光|沖涼房或者梳妝枱|倒影|照
+電器|冷氣機|laang5 hei3 gei1|冷氣、空調|用嚟令室內涼啲|撳掣或者用遙控開關|有出風口，通常裝喺高處|屋企或者辦公室|室溫|開
+電器|遙控器|jiu4 hung3 hei3|遙控|用嚟隔住一段距離控制電器|對住電器撳掣|細細部，上面有一排掣|客廳枱面或者梳化旁邊|電視|攞
+電器|充電器|cung1 din6 hei3|火牛|用嚟幫電器充電|插入電源，再接駁要充電嘅裝置|通常有插頭同輸出插口|屋企插座附近或者袋入面|手機|用
+隨身用品|銀包|ngan4 baau1|錢包、皮夾|裝錢同卡|打開再攞出銀紙或者卡|可以摺起，通常有幾個格|手袋或者褲袋|銀紙|攞
+隨身用品|銀紙|ngan4 zi2|紙幣|用嚟畀錢|按面值拎出所需張數付款|一張張，上面有面值同圖案|銀包或者櫃員機|現金|數
+隨身用品|散紙|saan2 zi2|碎銀、零錢|用嚟付款或者找續|可以逐個數或者放入投幣口|通常係細細個嘅硬幣|散紙包或者收銀處|找續|數
+隨身用品|八達通|baat3 daat6 tung1|八達通卡|用嚟支付車費或者購物|拍喺讀卡器上|常見版本係一張有感應功能嘅卡|銀包或者卡套|搭車|用
+隨身用品|手袋|sau2 doi2|手提袋|用嚟裝隨身嘅物品|用手拎或者掛喺肩上|有袋身同手挽或者肩帶|衣櫃或者出街嗰陣|銀包|拎
+隨身用品|地圖|dei6 tou4||用嚟睇位置同搵路|對照街名同地標揀路|標有道路、地點同圖例|手機入面、車站或者旅遊中心|方向|睇
+隨身用品|身份證|san1 fan2 zing3|身分證|用嚟證明身份|需要核實身份時攞出嚟出示|有相片同身份資料|銀包或者證件套|證件|攞
+隨身用品|購物袋|kau3 mat6 doi6|環保袋|用嚟拎買返嚟嘅嘢|將貨品放入袋，再用手挽拎|有開口同手挽，部分可以摺埋|超級市場或者出街嘅袋入面|買嘢|拎
+飲食用具|碟|dip6|碟仔、盤子|用嚟裝餸或者擺食物|將食物盛喺上面|通常扁平，邊緣微微向上|廚房餐具櫃|餸菜|洗
+飲食用具|餐刀|caan1 dou1|食飯刀|用嚟切細食物|揸住柄，喺碟上切開食物|有柄同刀刃|餐枱或者餐具櫃|餐叉|洗
+飲食用具|鑊|wok6|炒鑊|用嚟炒餸或者煎嘢|加油加熱，再放入食材翻炒|底部凹，邊緣比平底鑊高|廚房爐頭|鑊鏟|洗
+飲食用具|熱水壺|jit6 seoi2 wu2|電熱水壺、水煲|用嚟煲水|裝水後拎去加熱或者撳掣|有壺身、手柄同壺嘴|廚房或者茶水間|熱水|用
+飲食用具|飯盒|faan6 hap2|便當盒|用嚟裝飯同餸，方便帶出去|打開蓋放食物，再閂實|有盒身同蓋，有啲有間格|廚房或者返工嘅袋入面|午餐|洗
+飲食用具|湯碗|tong1 wun2||用嚟盛湯|將煮好嘅湯舀入去|入面凹，開口通常係圓形|廚房或者餐枱|湯匙|洗
 `.trim().split('\n').map(line => {
   const [cat,word,jyut,alt,use,act,prop,loc,assoc,verb] = line.split('|');
   return {word,jyut,alt,verb,answers:{cat,use,act,prop,loc,assoc}};
 });
-const EXAMPLES_BY_WORD = new Map(WORD_EXAMPLES.map(entry => [entry.word,entry]));
-for (const entry of WORD_EXAMPLES) {
+const STARTER_EXAMPLES = STARTER_ITEMS.map(({word,jyut,alt,feats,ext}) => ({
+  word,jyut,alt,verb:ext[1].parts[0],
+  answers:Object.fromEntries(FEATS.map(({key}) => [key,feats[key].na?'—':feats[key].a]))
+}));
+const BUILT_IN_WORDS = [...STARTER_EXAMPLES,...WORD_EXAMPLES];
+const ALL_CATEGORIES = [...new Set(BUILT_IN_WORDS.map(libraryCategory))];
+const EXAMPLES_BY_WORD = new Map(BUILT_IN_WORDS.map(entry => [entry.word,entry]));
+for (const entry of BUILT_IN_WORDS) {
   for (const alias of splitList(entry.alt)) {
     if (!EXAMPLES_BY_WORD.has(alias)) EXAMPLES_BY_WORD.set(alias,entry);
   }
 }
 const DISTRACTOR_EXAMPLES = ['西瓜','的士','貓','鉛筆','電視','梳化','茶杯','枕頭','鞋','毛巾','鎚仔','太陽','樹']
   .map(word => EXAMPLES_BY_WORD.get(word));
+const DAILY_LIFE_CATEGORIES = new Set(['身體部位','醫療及復康用品','人物','地方']);
+const DAILY_LIFE_DISTRACTOR_EXAMPLES = ['的士','金魚','茶杯','鑊','鞋','竹','鉛筆','太陽']
+  .map(word => EXAMPLES_BY_WORD.get(word));
 const EDIBLE_CATEGORIES = new Set(['生果','蔬菜','食物','飲品']);
 const PICTURE_FALLBACK_VERB = '睇';
+const library = {open:false,query:'',category:''};
+function libraryCategory({answers}){
+  return answers.cat==='天上嘅嘢'?'大自然':answers.cat;
+}
 function lookupJyutping(word){
   const readings = globalThis.ToJyutping?.getJyutpingList(word) || [];
   if (readings.length !== [...word].length || !readings.every(([,syllable]) => /^[a-z]+[1-6]$/.test(syllable || ''))) return '';
@@ -677,7 +804,8 @@ function lookupJyutping(word){
 function sampleDistractors(entry,key){
   const category = entry.answers.cat;
   const edible = EDIBLE_CATEGORIES.has(category);
-  const distinct = DISTRACTOR_EXAMPLES.filter(({answers}) => answers.cat !== category && (!edible || !EDIBLE_CATEGORIES.has(answers.cat)));
+  const examples = DAILY_LIFE_CATEGORIES.has(category) ? DAILY_LIFE_DISTRACTOR_EXAMPLES : DISTRACTOR_EXAMPLES;
+  const distinct = examples.filter(({answers}) => answers.cat !== category && (!edible || !EDIBLE_CATEGORIES.has(answers.cat)));
   return [...new Set(distinct.map(({answers}) => answers[key]).filter(answer =>
     answer !== '—' && answer !== entry.answers[key] && splitList(answer).length === 1
   ))].slice(0,3);
@@ -1097,6 +1225,27 @@ const A={
     el.value='';state.addMsg=null;
     openNewEditor(w);render();
   },
+  toggleLibrary(){
+    library.open=!library.open;
+    render();
+    document.getElementById(library.open?'library-search':'btnLibrary').focus();
+  },
+  pickLibraryWord(d){
+    const index=ITEMS.findIndex(item => item.word===d.word);
+    if(index<0){
+      state.addMsg=null;
+      openNewEditor(d.word);
+      document.getElementById('ed-word').focus();
+      return;
+    }
+    if(ITEMS[index].custom){
+      A.openEditor({id:ITEMS[index].id});
+      document.getElementById('ed-word').focus();
+      return;
+    }
+    if(!state.selected[index])A.toggleItem({i:index});
+    document.getElementById('item-'+ITEMS[index].id).focus();
+  },
   openEditor(d){const c=CUSTOM.find(x=>x.id===d.id);if(!c)return;state.ed={mode:'edit',c:JSON.parse(JSON.stringify(c)),err:null,delArm:false};renderEditor();},
   closeEditor(){state.ed=null;renderEditor();},
   edUseSvg(){collectEditor();state.ed.c.img='';renderEditor();},
@@ -1170,7 +1319,10 @@ document.addEventListener('click',e=>{
   const fn=A[el.dataset.act];if(fn)fn(el.dataset);
 });
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='typeForm'){e.preventDefault();A.typeSubmit();}if(e.target&&e.target.id==='addForm'){e.preventDefault();A.addWord();}});
-document.addEventListener('change',e=>{const t=e.target;if(!t||!t.id||!state.ed)return;
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='library-category'){library.category=t.value;updateLibraryResults();return;}
+  if(!t.id||!state.ed)return;
   if(t.id==='ed-file'&&t.files&&t.files[0]){collectEditor();loadPhoto(t.files[0]).then(u=>{if(!state.ed)return;state.ed.c.img=u;state.ed.err=null;renderEditor();}).catch(()=>{if(!state.ed)return;state.ed.err='讀唔到呢個圖片檔，請揀另一張相。';renderEditor();});}
   if(t.id.startsWith('ed-na-')){const k=t.id.slice(6);['ed-a-','ed-d-'].forEach(p=>{const x=document.getElementById(p+k);if(x)x.disabled=t.checked;});}
 });
@@ -1178,6 +1330,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.id||!state.ed)
 document.addEventListener('focusin',e=>{if(e.target&&e.target.id==='typeAns'&&T)T.typing=true;});
 document.addEventListener('input',e=>{
   if(e.target.id==='typeAns'&&T)T.typing=true;
+  if(e.target.id==='library-search'){library.query=e.target.value;updateLibraryResults();return;}
   if(state.ed&&(e.target.id==='ed-word'||e.target.id==='ed-verb')){
     const word=document.getElementById('ed-word').value.trim(),verb=document.getElementById('ed-verb').value.trim();
     document.getElementById('ed-extension').textContent=extensionPreview(word,verb);
@@ -1197,6 +1350,39 @@ function itemCard(it,i){
   const btn=`<button class="item" id="item-${it.id}" data-act="toggleItem" data-i="${i}" aria-pressed="${state.selected[i]}">${it.custom?`<span class="badge${it.checked?' ok':''}">${it.checked?'自訂':'AI · 未核對'}</span>`:''}<span class="tick" aria-hidden="true">✓</span><span class="thumb">${it.pic}</span><span class="w">${escT(it.word)}</span><span class="j">${escT(it.jyut)}</span></button>`;
   return it.custom?`<div class="itemwrap">${btn}<button class="editbtn" id="edit-${it.id}" data-act="openEditor" data-id="${it.id}">${it.checked?'修改':'核對／修改'}</button></div>`:btn;
 }
+function libraryMatches(){
+  const query=library.query.trim().toLowerCase();
+  return BUILT_IN_WORDS.filter(entry => (!library.category||libraryCategory(entry)===library.category)
+    && (!query||entry.word.includes(query)||entry.alt.includes(query)||entry.jyut.includes(query)));
+}
+function libraryResults(matches){
+  const inTraining=new Map(ITEMS.map((entry,i)=>[entry.word,{entry,selected:state.selected[i]}]));
+  if(!matches.length)return '<p class="rd">搵唔到符合條件嘅詞語。</p>';
+  return matches.map(({word})=>{
+    const result=inTraining.get(word);
+    const action=result?.entry.custom?'修改':result?.selected?'已選用':result?'選用':'核對並加入';
+    return `<button type="button" class="btn sm" data-act="pickLibraryWord" data-word="${escT(word)}" aria-label="${escT(word+'，'+action)}"><b>${escT(word)}</b><small>${action}</small></button>`;
+  }).join('');
+}
+function updateLibraryResults(){
+  const matches=libraryMatches();
+  document.getElementById('library-count').textContent='搵到 '+matches.length+' 個詞語';
+  document.getElementById('library-results').innerHTML=libraryResults(matches);
+}
+function renderLibrary(){
+  if(!library.open)return '<div id="word-library" hidden></div>';
+  const matches=libraryMatches();
+  const options=ALL_CATEGORIES.map(category=>`<option value="${escT(category)}"${category===library.category?' selected':''}>${escT(category)}</option>`).join('');
+  return `<section class="word-library" id="word-library" aria-label="內置詞庫">
+    <div class="library-filters">
+      <label>搜尋<input type="search" id="library-search" value="${escT(library.query)}" placeholder="例如：輪椅"></label>
+      <label>類別<select id="library-category"><option value="">所有類別</option>${options}</select></label>
+    </div>
+    <p class="rd">撳詞語核對後加入訓練。需要看圖命名時，可以上載相片。</p>
+    <output class="rd" id="library-count" aria-live="polite">搵到 ${matches.length} 個詞語</output>
+    <div class="library-results" id="library-results">${libraryResults(matches)}</div>
+  </section>`;
+}
 function renderHome(){
   const n=state.selected.filter(Boolean).length;
   return `<div class="wrap"><div class="home">
@@ -1207,9 +1393,9 @@ function renderHome(){
   <section><div class="wordsHead"><h2 class="sec-h">訓練詞語 <small>撳一下可以加入或剔除，已選 ${n} 個</small></h2>
   <form class="addword" id="addForm" autocomplete="off"><input id="newWord" type="text" maxlength="12" enterkeyhint="done" placeholder="新增詞語，例如：西瓜" aria-label="新增訓練詞語"><button type="submit" class="btn primary" id="btnAddWord">新增</button></form>
   ${state.addMsg?`<p class="addmsg ${state.addMsg.type}" id="addMsg" role="status">${escT(state.addMsg.text)}</p>`:''}
-  <div class="savebar"><button type="button" class="btn sm" id="btnSaveWords" data-act="saveWords">儲存詞語</button>${wordSaveHTML()}</div>
+  <div class="savebar"><button type="button" class="btn sm" id="btnSaveWords" data-act="saveWords">儲存詞語</button>${wordSaveHTML()}<button type="button" class="btn sm" id="btnLibrary" data-act="toggleLibrary" aria-expanded="${library.open}" aria-controls="word-library">內置詞庫（${BUILT_IN_WORDS.length} 個）</button></div>
   <p class="addmsg" id="addHint">新增後會用本機詞庫預填資料。核對完成先加入訓練，亦可以上載相片。</p></div>
-  <div class="items">${ITEMS.map((it,i)=>itemCard(it,i)).join('')}</div></section>
+  ${renderLibrary()}<div class="items">${ITEMS.map((it,i)=>itemCard(it,i)).join('')}</div></section>
   ${state.warnUnchecked?`<div class="warnbox" id="warnUnchecked" role="alert"><p><b>有 ${state.warnUnchecked.length} 個 AI 生成嘅詞語未經核對：</b>${escT(state.warnUnchecked.join('、'))}。AI 寫嘅粵拼、答案同干擾選項有機會出錯，建議先核對。</p><div class="home-actions"><button class="btn" id="btnWarnClose" data-act="warnClose">返回核對</button><button class="btn primary" id="btnStartAnyway" data-act="start" data-force="1">照樣開始</button></div></div>`:''}
   <div class="home-actions"><button class="btn primary" id="btnStart" data-act="start" ${n?'':'disabled'}>開始訓練（${n} 個詞語）</button>${voiceBtn('btnVoiceHome','')}<button class="btn" id="btnSettingsHome" data-act="openSettings">治療師設定</button></div>
   <section><h2 class="sec-h">每個詞語嘅訓練步驟</h2><ol class="flow">
